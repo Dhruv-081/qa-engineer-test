@@ -18,30 +18,19 @@ router.post('/payment-status', (req, res) => {
     const signature = req.headers['x-webhook-signature'];
     const { payment_id, status, event_id } = req.body;
 
-    // BUG D: No signature verification
-    // Real systems MUST verify webhook signatures to prevent spoofing
-    // Missing validation below:
-    
-    // const expectedSignature = crypto
-    //   .createHmac('sha256', WEBHOOK_SECRET)
-    //   .update(JSON.stringify(req.body))
-    //   .digest('hex');
-    // 
-    // if (signature !== expectedSignature) {
-    //   return res.status(401).json({ error: 'Invalid signature' });
-    // }
-
-    if (!payment_id || !status) {
-      return res.status(400).json({ error: 'payment_id and status required' });
+    if (!signature || !payment_id || !status || !event_id) {
+      return res.status(400).json({ error: 'payment_id, status, event_id, and signature required' });
     }
-
-    // BUG E: No idempotency check
-    // Webhooks can be delivered multiple times - must be idempotent
-    // Missing check below:
-    
-    // if (db.processed_webhooks.includes(event_id)) {
-    //   return res.status(200).json({ message: 'Already processed' });
-    // }
+    const expectedSignature = crypto.createHmac('sha256', WEBHOOK_SECRET)
+      .update(JSON.stringify(req.body)).digest('hex');
+    const supplied = Buffer.from(String(signature), 'utf8');
+    const expected = Buffer.from(expectedSignature, 'utf8');
+    if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+    if (db.processed_webhooks.includes(event_id)) {
+      return res.status(200).json({ success: true, message: 'Webhook already processed', duplicate: true, event_id });
+    }
 
     const payment = getPaymentById(payment_id);
     if (!payment) {
@@ -52,8 +41,7 @@ router.post('/payment-status', (req, res) => {
     payment.status = status;
     payment.webhook_received_at = new Date();
 
-    // Mark webhook as processed (if idempotency was implemented)
-    // db.processed_webhooks.push(event_id);
+    db.processed_webhooks.push(event_id);
 
     res.status(200).json({
       success: true,

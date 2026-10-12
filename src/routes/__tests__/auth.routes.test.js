@@ -1,27 +1,37 @@
-import { test } from 'node:test';
-import assert from 'node:assert';
+import { test, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { app, request, resetDatabase } from './helpers.js';
 
-/**
- * Auth Routes Tests
- * 
- * Candidates should add tests here for Bug C (email validation)
- * 
- * Example test structure:
- * 
- * test('should reject email without TLD', async () => {
- *   const result = validateEmail('user@domain');
- *   assert.strictEqual(result, false);
- * });
- */
+beforeEach(() => resetDatabase());
 
-test('placeholder test - candidates should add real tests', () => {
-  assert.ok(true);
+test('accepts a valid email and registers a merchant', async () => {
+  const response = await request(app).post('/api/auth/register').send({ email: 'qa@example.co.uk', password: 'SecurePass123!', business_name: 'QA Shop' });
+  assert.equal(response.status, 201);
+  assert.equal(response.body.user.email, 'qa@example.co.uk');
+  assert.ok(response.body.token);
 });
 
-// TODO: Add tests for:
-// - Valid email acceptance
-// - Invalid email rejection (no TLD, no @, etc.)
-// - Registration with valid data
-// - Registration with invalid email
-// - Login with correct credentials
-// - Login with incorrect credentials
+test('Bug C: rejects email without a dotted domain', async () => {
+  const response = await request(app).post('/api/auth/register').send({ email: 'user@domain', password: 'SecurePass123!', business_name: 'QA Shop' });
+  assert.equal(response.status, 400);
+  assert.match(response.body.error, /email/i);
+});
+
+test('rejects missing-at-sign and whitespace email formats', async () => {
+  for (const email of ['user.example.com', 'user @example.com']) {
+    const response = await request(app).post('/api/auth/register').send({ email, password: 'SecurePass123!', business_name: 'QA Shop' });
+    assert.equal(response.status, 400, email);
+  }
+});
+
+test('rejects duplicate merchant registration', async () => {
+  const response = await request(app).post('/api/auth/register').send({ email: 'merchant@test.com', password: 'SecurePass123!', business_name: 'Other Shop' });
+  assert.equal(response.status, 409);
+});
+
+test('logs in with documented seed credentials and rejects a wrong password', async () => {
+  const ok = await request(app).post('/api/auth/login').send({ email: 'merchant@test.com', password: 'Test123!' });
+  const bad = await request(app).post('/api/auth/login').send({ email: 'merchant@test.com', password: 'wrong-password' });
+  assert.equal(ok.status, 200);
+  assert.equal(bad.status, 401);
+});

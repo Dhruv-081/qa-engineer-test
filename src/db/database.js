@@ -12,11 +12,11 @@ export const db = {
 
 // Seed some test data
 export function initDatabase() {
-  // Create a test merchant
+  // Test123! (valid bcrypt hash; the original fixture hash did not match its README password)
   db.users.push({
     id: "1",
     email: "merchant@test.com",
-    password: "$2a$10$8Z3KxGXvGqJQZ.ZF9Z3KxGXvGqJQZ.ZF9Z3KxGXvGqJQZ.ZF9", // password: Test123!
+    password: "$2a$10$17cBOv1g9KDklF2dyBnmve7MIO2431yhD2BYPiBkQM2xtMGJpFGV.",
     business_name: "Test Merchant",
     type: "merchant",
     created_at: new Date(),
@@ -44,6 +44,12 @@ export function initDatabase() {
   });
 
   console.log("📊 Database initialized with test data");
+}
+
+// Keep tests isolated while retaining the same deterministic seed data.
+export function resetDatabase() {
+  for (const key of Object.keys(db)) db[key].length = 0;
+  initDatabase();
 }
 
 // Helper to find user by email

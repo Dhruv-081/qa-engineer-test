@@ -8,8 +8,8 @@ const JWT_SECRET = 'test-secret-key-do-not-use-in-production';
 
 // BUG C: Email validation is too permissive
 function validateEmail(email) {
-  // BUG: This regex allows emails without TLD like "user@domain"
-  const emailRegex = /^[^\s@]+@[^\s@]+$/;
+  // Require a dotted domain and a non-empty suffix; format checks cannot prove mailbox ownership.
+  const emailRegex = /^[^\s@]+@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
   return emailRegex.test(email);
 }
 

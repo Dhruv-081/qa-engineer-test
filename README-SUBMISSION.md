@@ -1,0 +1,3 @@
+# Submission Summary
+
+I tested the API through HTTP requests before changing code, reproduced all seven seeded defects, and documented observed behavior and impact in `bug-reports.md`. I fixed the payment response/limit, email-validation, webhook-signature/idempotency, duplicate-order, and duplicate-invoice issues while preserving the documented API routes. I added 20 Node.js HTTP-level regression tests covering happy paths, negative inputs, boundaries, replay, and duplicate delivery; `npm test` passes all 20. I also corrected the README seed account's invalid password hash and documented production caveats for webhook secret handling, durable idempotency, and unimplemented integration behavior in `fixes.md` and `test-plan.md`.

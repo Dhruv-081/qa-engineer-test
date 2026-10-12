@@ -41,25 +41,19 @@ router.post('/', (req, res) => {
       return res.status(400).json({ error: 'Order must have at least one item' });
     }
 
-    // BUG F: No duplicate order prevention
-    // Should check if table already has a pending order
-    // Missing validation below:
-    
-    // const existingOrder = (db.table_orders || []).find(
-    //   o => o.merchant_id === merchant_id && 
-    //        o.table_number === table_number && 
-    //        o.status === 'pending'
-    // );
-    // if (existingOrder) {
-    //   return res.status(409).json({ error: 'Table already has a pending order' });
-    // }
+    const existingOrder = (db.table_orders || []).find(
+      o => o.merchant_id === String(merchant_id) && String(o.table_number) === String(table_number) && o.status === 'pending'
+    );
+    if (existingOrder) {
+      return res.status(409).json({ error: 'Table already has a pending order' });
+    }
 
     // Calculate total
     const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     const newOrder = {
       id: uuidv4(),
-      merchant_id,
+      merchant_id: String(merchant_id),
       table_number,
       items,
       customer_name: customer_name || 'Guest',

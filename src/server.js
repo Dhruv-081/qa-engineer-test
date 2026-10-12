@@ -8,6 +8,7 @@ import webhookRoutes from "./routes/webhook.routes.js";
 import tableOrderRoutes from "./routes/table-order.routes.js";
 import einvoiceRoutes from "./routes/einvoice.routes.js";
 import { initDatabase } from "./db/database.js";
+import { fileURLToPath } from "node:url";
 
 const app = express();
 const httpServer = createServer(app);
@@ -103,10 +104,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`✅ EU Pay QA Test API running on http://localhost:${PORT}`);
-  console.log(`📖 Visit http://localhost:${PORT} for available endpoints`);
-  console.log(`🔌 Socket.IO ready for real-time updates`);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  httpServer.listen(PORT, () => {
+    console.log(`✅ EU Pay QA Test API running on http://localhost:${PORT}`);
+    console.log(`📖 Visit http://localhost:${PORT} for available endpoints`);
+    console.log(`🔌 Socket.IO ready for real-time updates`);
+  });
+}
 
 export default app;
